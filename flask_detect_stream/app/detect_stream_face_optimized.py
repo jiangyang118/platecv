@@ -13,7 +13,9 @@ from app.face_capture import process_face_and_capture  # 根据你的路径调�
 # yolo = YOLO("models/yolo11n-seg.pt")  # 实例分割模型
 
 
-yolo = YOLO("models/yolov8s-seg.pt") # 使用YOLOv8s-seg模型，确保模型路径正确
+# yolo = YOLO("models/yolov8s-seg.pt") # 使用YOLOv8s-seg模型，确保模型路径正确
+yolo = YOLO("models/yolov8n-seg.pt") 
+
 # yolo = YOLO("models/yolo11n.pt")  # 替换为实际模型路径
 # 记录每个人上次截图时间
 last_capture_time = {}
@@ -37,7 +39,7 @@ def run_detection_face_food2(video_source=0):
 
         res = yolo.predict(source=frame, imgsz=640, verbose=False)[0]
         annotated = res.plot()
-        
+
         process_frame_logic(res, frame, annotated, last_capture_time) 
 
         # 视频流返回
@@ -48,43 +50,48 @@ def run_detection_face_food2(video_source=0):
         yield (b"--frame\r\n"
                b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
 
-    cap.release()
-
-
+    cap.release() 
 
 def process_frame_logic(res, frame, annotated, last_capture_time, waste_threshold=0.25):
     """
-    针对每帧执行的完整业务逻辑，包括浪费判断、人脸识别和限流截图。
-    :param res: YOLO预测结果
-    :param frame: 原始帧
-    :param annotated: 带注释的帧
-    :param last_capture_time: 限流时间记录
-    :param waste_threshold: 判断浪费的阈值
-    :return: 更新后的 last_capture_time
+    优化后业务逻辑：先检测人脸，有人才判断是否有浪费，避免空耗资源。
     """
+    # 🔍 Step 1: 提取人脸
+    try:
+        face_imgs = DeepFace.extract_faces(frame, detector_backend="mtcnn", enforce_detection=False)
+    except Exception as e:
+        print(f"[ERROR] Face extraction failed: {e}")
+        face_imgs = []
+ 
+ 
+    if not face_imgs:
+        print("[DEBUG] 无人脸，跳过本帧")
+        return last_capture_time  # 没有人脸，跳过后续计算
 
-    # 安全判断：无分割结果
+    print(f"[DEBUG] Detected Faces: {len(face_imgs)}")
+
+    # 🧠 Step 2: 判断是否存在浪费（先确保有分割结果）
     if res.masks is None or res.masks.data is None:
-        print("[WARNING] 当前帧无分割结果，跳过")
+        print("[WARNING] 当前帧无分割结果，跳过浪费判断")
         return last_capture_time
 
     masks = res.masks.data.cpu().numpy()
     plates = [(b.xyxy.cpu().numpy()[0], cls)
               for b, cls in zip(res.boxes, res.boxes.cls.cpu().numpy()) if cls == 1]
 
-    waste_flag = False
-    ratio = 0.0
+    if not (masks.size > 0 and plates):
+        print("[DEBUG] 无餐盘或食物，跳过浪费判断")
+        return last_capture_time
 
-    if masks.size > 0 and plates:
-        frame_area = frame.shape[0] * frame.shape[1]
-        waste_flag, ratio = is_waste_plate(res, frame_area, waste_threshold)
-        draw_food_ratio_on_frame(annotated, plates[0][0], ratio)
+    frame_area = frame.shape[0] * frame.shape[1]
+    waste_flag, ratio = is_waste_plate(res, frame_area, waste_threshold)
 
-    # 人脸提取
-    face_imgs = DeepFace.extract_faces(frame, detector_backend="mtcnn", enforce_detection=False)
-    print(f"[DEBUG] Waste: {waste_flag}, Faces detected: {len(face_imgs)}")
+    if not waste_flag:
+        print("[DEBUG] 检测到有人，但无浪费行为，跳过截图")
+        return last_capture_time
 
-    # 封装调用：记录截图
+    # 🎯 Step 3: 有人 + 有浪费 → 标注 + 限流截图
+    draw_food_ratio_on_frame(annotated, plates[0][0], ratio)
     last_capture_time = process_face_and_capture(face_imgs, annotated, last_capture_time)
 
     return last_capture_time
