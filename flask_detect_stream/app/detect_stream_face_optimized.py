@@ -76,15 +76,23 @@ def process_frame_logic(res, frame, annotated, last_capture_time, waste_threshol
         return last_capture_time
 
     masks = res.masks.data.cpu().numpy()
-    plates = [(b.xyxy.cpu().numpy()[0], cls)
-              for b, cls in zip(res.boxes, res.boxes.cls.cpu().numpy()) if cls == 1]
+    classes = res.boxes.cls.cpu().numpy()
+    boxes = res.boxes.xyxy.cpu().numpy()
+    plate_indices = np.where(classes == 1)[0]
+    plates = boxes[plate_indices]
 
     if not (masks.size > 0 and plates):
         print("[DEBUG] 无餐盘或食物，跳过浪费判断")
         return last_capture_time
 
-    frame_area = frame.shape[0] * frame.shape[1]
-    waste_flag, ratio = is_waste_plate(res, frame_area, waste_threshold)
+    if masks.size > 0 and len(plates) > 0:
+        frame_area = frame.shape[0] * frame.shape[1]
+        waste_flag, ratio = is_waste_plate(res, frame_area, waste_threshold)
+        draw_food_ratio_on_frame(annotated, plates[0], ratio)
+
+    if not waste_flag:
+        # 未检测到浪费则跳过耗时的人脸识别步骤
+        return last_capture_time
 
     if not waste_flag:
         print("[DEBUG] 检测到有人，但无浪费行为，跳过截图")
