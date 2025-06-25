@@ -4,8 +4,7 @@ import numpy as np
 from ultralytics import YOLO
 from deepface import DeepFace
 from face.recognize_face import recg_face  # 假设你有一个人脸识别模块
-from face.recognize_face import save_face  # 假设你有一个保存人脸图片的模块
-from face.recognize_face import recg_face_nums
+from face.recognize_face import save_face  # 假设你有一个保存人脸图片的模块 
 from app.waste_detector import is_waste_plate, draw_food_ratio_on_frame 
 from app.face_capture import process_face_and_capture  # 根据你的路径调整
 
@@ -69,7 +68,7 @@ def process_frame_logic(res, frame, annotated, last_capture_time, waste_threshol
         return last_capture_time  # 没有人脸，跳过后续计算
 
     print(f"[DEBUG] Detected Faces: {len(face_imgs)}")
-
+    last_capture_time = process_face_and_capture(face_imgs, annotated, last_capture_time)
     # 🧠 Step 2: 判断是否存在浪费（先确保有分割结果）
     if res.masks is None or res.masks.data is None:
         print("[WARNING] 当前帧无分割结果，跳过浪费判断")
@@ -92,6 +91,6 @@ def process_frame_logic(res, frame, annotated, last_capture_time, waste_threshol
 
     # 🎯 Step 3: 有人 + 有浪费 → 标注 + 限流截图
     draw_food_ratio_on_frame(annotated, plates[0][0], ratio)
-    last_capture_time = process_face_and_capture(face_imgs, annotated, last_capture_time)
+  
 
     return last_capture_time

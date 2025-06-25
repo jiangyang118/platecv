@@ -10,6 +10,8 @@ This project provides a simple demonstration of food waste detection using YOLO 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
+
+source yolov11/bin/activate
 ```
 
 3. Install required packages:

@@ -32,7 +32,7 @@ def _get_model():
 
 def _embed(face_img: np.ndarray) -> np.ndarray:
     model = _get_model()
-    rep = DeepFace.represent(face_img, model_name="ArcFace", model=model, enforce_detection=False)[0]
+    rep = DeepFace.represent(face_img, model_name="ArcFace", enforce_detection=False)[0]
     return np.array(rep["embedding"], dtype=np.float32)
 
 
@@ -48,7 +48,9 @@ def recg_face_fast(face_img: np.ndarray, threshold: float = 45.0) -> str:
                 best_dist = dist
                 best_name = name
     if best_dist < threshold:
+        print(f"[INFO] Recognized face: {best_name} with distance {best_dist:.2f}")
         return NAME_MAP.get(best_name, best_name)
+    print(f"[INFO] Face not recognized, distance {best_dist:.2f}")
     return "未知"
 
 
