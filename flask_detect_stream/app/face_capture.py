@@ -1,6 +1,6 @@
 import time
 import cv2
-from face.recognize_face import recg_face_nums  # 请根据实际路径修改
+from face.recognize_face import recg_face_fast
 
 # 限流状态应传入并由外部持久化管理
 def process_face_and_capture(face_imgs, annotated, last_capture_time, output_dir="waste_captures"):
@@ -10,7 +10,7 @@ def process_face_and_capture(face_imgs, annotated, last_capture_time, output_dir
     face_img = face_imgs[0]["face"]
 
     try:
-        face_name = recg_face_nums(face_img)
+        face_name = recg_face_fast(face_img)
     except Exception as e:
         print(f"[ERROR] Face recognition failed: {e}")
         face_name = "未知"

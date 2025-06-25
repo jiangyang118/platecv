@@ -75,3 +75,4 @@ def run_detection_face_food(video_source=0):
                b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
 
     cap.release()
+

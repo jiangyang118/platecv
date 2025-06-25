@@ -14,3 +14,4 @@ for person in os.listdir('face_db'):
 
 with open('face_embeddings.pkl', 'wb') as f:
     pickle.dump(face_embeddings, f)
+

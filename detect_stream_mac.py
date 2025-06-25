@@ -17,13 +17,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-# 安装 Python 和依赖
-# brew install python3
-# python3 -m venv yolov11
-# source yolov11/bin/activate
-
-# pip install ultralytics opencv-python inference
-# python detect_stream_mac.py
