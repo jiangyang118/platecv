@@ -24,4 +24,4 @@ def detect_face_and_plate(frame):
         plate_box = plate.tolist()
 
     return face_box, plate_box
- 
+

@@ -25,3 +25,4 @@ def run_detection(video_source=0):
                b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
 
     cap.release()
+

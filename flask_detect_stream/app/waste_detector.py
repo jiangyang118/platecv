@@ -46,4 +46,6 @@ def draw_food_ratio_on_frame(annotated, bbox, ratio):
         0.8,
         (0, 0, 255),
         2
+    
     )
+

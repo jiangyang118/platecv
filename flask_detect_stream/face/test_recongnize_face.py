@@ -21,3 +21,4 @@ if __name__ == "__main__":
     else:
         result = recg_face(test_face_path)
         print(f"[RESULT] 识别结果：{result}")
+
