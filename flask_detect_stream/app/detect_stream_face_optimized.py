@@ -69,16 +69,22 @@ def process_frame_logic(res, frame, annotated, last_capture_time, waste_threshol
         return last_capture_time
 
     masks = res.masks.data.cpu().numpy()
-    plates = [(b.xyxy.cpu().numpy()[0], cls)
-              for b, cls in zip(res.boxes, res.boxes.cls.cpu().numpy()) if cls == 1]
+    classes = res.boxes.cls.cpu().numpy()
+    boxes = res.boxes.xyxy.cpu().numpy()
+    plate_indices = np.where(classes == 1)[0]
+    plates = boxes[plate_indices]
 
     waste_flag = False
     ratio = 0.0
 
-    if masks.size > 0 and plates:
+    if masks.size > 0 and len(plates) > 0:
         frame_area = frame.shape[0] * frame.shape[1]
         waste_flag, ratio = is_waste_plate(res, frame_area, waste_threshold)
-        draw_food_ratio_on_frame(annotated, plates[0][0], ratio)
+        draw_food_ratio_on_frame(annotated, plates[0], ratio)
+
+    if not waste_flag:
+        # 未检测到浪费则跳过耗时的人脸识别步骤
+        return last_capture_time
 
     # 人脸提取
     face_imgs = DeepFace.extract_faces(frame, detector_backend="mtcnn", enforce_detection=False)
