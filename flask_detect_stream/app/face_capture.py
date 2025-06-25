@@ -20,7 +20,7 @@ def process_face_and_capture(face_imgs, annotated, last_capture_time, output_dir
     print(f"[DEBUG] Current time: {now}, Last capture time: {last_capture_time.get(face_name, 0)}")
 
     # 限流：每人每60秒最多保存一次
-    if face_name not in last_capture_time or now - last_capture_time[face_name] > 60:
+    if face_name != "未知" and (face_name not in last_capture_time or now - last_capture_time[face_name] > 60):
         last_capture_time[face_name] = now
         color = (0, 0, 255)
         cv2.putText(annotated, face_name, (20, 60),
